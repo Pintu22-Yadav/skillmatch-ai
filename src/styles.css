@@ -1,0 +1,85 @@
+/* Custom Styles for SkillMatch AI */
+
+/* Buttons */
+.btn-primary {
+  @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-4 focus:ring-blue-200;
+}
+
+.btn-secondary {
+  @apply bg-white text-blue-600 border-2 border-blue-600 hover:bg-blue-50 focus:ring-4 focus:ring-blue-200;
+}
+
+/* Cards */
+.card {
+  @apply bg-white rounded-xl shadow-md border border-gray-200;
+}
+
+/* Navbar Links */
+.nav-link {
+  @apply font-medium transition-all duration-200;
+}
+
+/* Skill Cards */
+.skill-card {
+  @apply transform hover:scale-105;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    @apply px-4;
+  }
+  
+  h1 {
+    @apply text-3xl;
+  }
+  
+  .card {
+    @apply p-4;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Focus styles for accessibility */
+button:focus,
+input:focus,
+a:focus {
+  @apply outline-none ring-2 ring-blue-500 ring-offset-2;
+}
+
+/* Smooth transitions */
+* {
+  @apply transition-colors duration-200;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-400 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-500;
+}
