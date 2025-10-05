@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { UserPlus, Mail, Lock, User, Eye, EyeOff, Briefcase, Github, Twitter } from 'lucide-react';
+import { UserPlus, Mail, Lock, User, Eye, EyeOff, Briefcase, AlertCircle } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const Signup: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -13,32 +14,47 @@ const Signup: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { signUp } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
+    setError('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords don't match!");
+      setError("Passwords don't match!");
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters long");
       return;
     }
 
     setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      console.log('Signup attempt:', formData);
+    setError('');
+
+    const { error } = await signUp(
+      formData.email,
+      formData.password,
+      formData.fullName,
+      formData.jobTitle
+    );
+
+    if (error) {
+      setError(error.message || 'Failed to create account. Please try again.');
       setIsLoading(false);
-      // Redirect to home after successful signup
+    } else {
       navigate('/');
-    }, 1500);
+    }
   };
 
   return (
@@ -51,6 +67,13 @@ const Signup: React.FC = () => {
 
         <div className="card p-8">
           <form className="space-y-6" onSubmit={handleSubmit}>
+            {error && (
+              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800">
+                <AlertCircle size={20} />
+                <p className="text-sm">{error}</p>
+              </div>
+            )}
+
             <div>
               <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
                 Full Name
@@ -199,34 +222,6 @@ const Signup: React.FC = () => {
                 </>
               )}
             </button>
-
-            <div className="mt-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">Or sign up with</span>
-                </div>
-              </div>
-
-              <div className="mt-6 grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  className="w-full inline-flex justify-center items-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all duration-200"
-                >
-                  <Github size={20} className="mr-2" />
-                  GitHub
-                </button>
-                <button
-                  type="button"
-                  className="w-full inline-flex justify-center items-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all duration-200"
-                >
-                  <Twitter size={20} className="mr-2" />
-                  Twitter
-                </button>
-              </div>
-            </div>
 
             <div className="text-center mt-6">
               <p className="text-sm text-gray-600">

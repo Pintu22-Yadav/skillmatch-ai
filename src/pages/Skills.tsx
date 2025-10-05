@@ -1,19 +1,113 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, X, Code, Database, Globe } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
+
+interface UserSkillWithDetails {
+  id: string;
+  skill_id: string;
+  skills: {
+    id: string;
+    name: string;
+    category: string;
+  };
+}
 
 const Skills: React.FC = () => {
-  const [skills, setSkills] = useState<string[]>(['Java', 'SQL', 'React']);
+  const [skills, setSkills] = useState<string[]>([]);
   const [newSkill, setNewSkill] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
 
-  const addSkill = () => {
-    if (newSkill.trim() && !skills.includes(newSkill.trim())) {
-      setSkills([...skills, newSkill.trim()]);
-      setNewSkill('');
+  useEffect(() => {
+    if (user) {
+      fetchUserSkills();
+    }
+  }, [user]);
+
+  const fetchUserSkills = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('user_skills')
+        .select('id, skill_id, skills(id, name, category)')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      const skillNames = (data as UserSkillWithDetails[])
+        .map(item => item.skills.name)
+        .filter(Boolean);
+      setSkills(skillNames);
+    } catch (error) {
+      console.error('Error fetching skills:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const removeSkill = (skillToRemove: string) => {
-    setSkills(skills.filter(skill => skill !== skillToRemove));
+  const addSkill = async () => {
+    if (!newSkill.trim() || skills.includes(newSkill.trim()) || !user) return;
+
+    try {
+      let skillId: string;
+      const { data: existingSkill } = await supabase
+        .from('skills')
+        .select('id')
+        .ilike('name', newSkill.trim())
+        .maybeSingle();
+
+      if (existingSkill) {
+        skillId = existingSkill.id;
+      } else {
+        const { data: newSkillData, error: skillError } = await supabase
+          .from('skills')
+          .insert({ name: newSkill.trim(), category: 'Custom' })
+          .select('id')
+          .single();
+
+        if (skillError) throw skillError;
+        skillId = newSkillData.id;
+      }
+
+      const { error: userSkillError } = await supabase
+        .from('user_skills')
+        .insert({ user_id: user.id, skill_id: skillId });
+
+      if (userSkillError) throw userSkillError;
+
+      setSkills([...skills, newSkill.trim()]);
+      setNewSkill('');
+    } catch (error) {
+      console.error('Error adding skill:', error);
+    }
+  };
+
+  const removeSkill = async (skillToRemove: string) => {
+    if (!user) return;
+
+    try {
+      const { data: skillData } = await supabase
+        .from('skills')
+        .select('id')
+        .ilike('name', skillToRemove)
+        .maybeSingle();
+
+      if (skillData) {
+        const { error } = await supabase
+          .from('user_skills')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('skill_id', skillData.id);
+
+        if (error) throw error;
+      }
+
+      setSkills(skills.filter(skill => skill !== skillToRemove));
+    } catch (error) {
+      console.error('Error removing skill:', error);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -32,6 +126,17 @@ const Skills: React.FC = () => {
     }
     return <Code size={20} />;
   };
+
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <div className="card p-8 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading your skills...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto">
